@@ -1,0 +1,31 @@
+version: '3'
+services:
+  webserver:
+    image: nginx:1.23-alpine
+    volumes:
+      - ./default.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/public:/var/www/html/app
+    ports:
+      - 9097:80
+    restart: always
+    depends_on:
+      - mariadb
+      - backend
+
+  backend:
+    image: backend
+    build: backend
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/dist/
+      - /usr/src/app/node_modules/
+    restart: always
+    env_file: .env
+    entrypoint: sh -c "npm run start:$${START_MODE:-prod}"
+
+  mariadb:
+    image: mariadb:10.5.17-focal
+    env_file: .env
+    volumes:
+      - ./data/db/mysql:/var/lib/mysql
+      - ./init-db.sql/:/docker-entrypoint-initdb.d/
