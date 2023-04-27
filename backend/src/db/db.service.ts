@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { Pool, PoolConnection } from 'mysql'
+import { MysqlError, OkPacket, Pool, PoolConnection } from 'mysql'
 
 // eslint-disable-next-line
 const mysql = require('mysql')
@@ -33,64 +33,59 @@ export class DbService {
     )
   }
 
-  async insert<T>(
-    table: string,
-    data: T,
-  ): Promise<boolean | number> {
+  async insert<T>(table: string, data: T): Promise<number> {
     return await new Promise(async (res, rej) =>
       this.query(async (conn: PoolConnection) => {
-        if (0 == Object.keys(data).length) return false
+        if (0 == Object.keys(data).length) return 0
 
-        let stmt = `insert into \`${table}\` set `
-        const params = []
+        const params = Object.keys(data).map((prop) => [prop, data[prop]])
 
-        for (const prop in data) {
-          params.push(data[prop])
-          stmt += `\`${prop}\` = ?, `
-        }
+        const stmt = `insert into \`${table}\` (${params
+          .map((p) => p[0])
+          .join(',')}) values (${new Array(params.length).fill('?').join(',')})`
 
-        stmt = stmt.replace(/\, $/, '')
-
-        conn.query(stmt, params, (err, result) => {
-          if (err) return rej(err)
-          return res(result.insertId)
-        })
+        conn.query(
+          stmt,
+          params.map((p) => p[1]),
+          (err: MysqlError, result: OkPacket) => {
+            if (err) return rej(err)
+            return res(result.insertId)
+          },
+        )
       }),
     )
   }
 
-  // @todo fix any type return
   async update<T>(
     table: string,
     id: number,
     data: Partial<T>,
-  ): Promise<any> {
+  ): Promise<boolean> {
     return await new Promise(async (res, rej) =>
-      this.query(async (conn) => {
+      this.query(async (conn: PoolConnection) => {
         if (0 == Object.keys(data).length) return res(true)
 
-        let stmt = `update \`${table}\` set `
-        const params = []
+        const params = Object.keys(data).map((prop) => [prop, data[prop]])
 
-        for (const prop in data) {
-          params.push(data[prop])
-          stmt += `\`${prop}\` = ?, `
-        }
+        const stmt = `update \`${table}\` set ${params
+          .map((p) => `\`${p[0]}\` = ?`)
+          .join(',')} where \`id\` = ? limit 1`
 
-        stmt = stmt.replace(/\, $/, '')
-        stmt += ` where \`id\` = ? limit 1`
-
-        conn.query(stmt, [...params, id], (err, result) => {
-          if (err) return rej(err)
-          return res(result)
-        })
+        conn.query(
+          stmt,
+          [...params.map((p) => p[1]), id],
+          (err: MysqlError, result: OkPacket) => {
+            if (err) return rej(err)
+            return res(result.affectedRows > 0)
+          },
+        )
       }),
     )
   }
 
   delete<T>(table: string, query: Partial<T>, limit = -1): Promise<number> {
     return new Promise((res, rej) =>
-      this.query(async (conn) => {
+      this.query(async (conn: PoolConnection) => {
         const fields = [],
           exec = []
 
@@ -102,9 +97,12 @@ export class DbService {
         const stmt =
           `delete from \`${table}\` where ${fields
             .map((field) => `${field} = ?`)
-            .join(' and ')}` + (limit > 0 ? ` limit ${limit}` : '')
+            .join(' and ')}` +
+          // empty query
+          (fields.length == 0 ? '1=1' : '') +
+          (limit > 0 ? ` limit ${limit}` : '')
 
-        conn.query(stmt, exec, (err, result) => {
+        conn.query(stmt, exec, (err: MysqlError, result: OkPacket) => {
           if (err) return rej(err)
           return res(result.affectedRows)
         })
@@ -112,9 +110,14 @@ export class DbService {
     )
   }
 
-  find<T>(table: string, query: Partial<T>, limit = -1): Promise<T[]> {
+  find<T>(
+    table: string,
+    query: Partial<T>,
+    limit = -1,
+    searchMode = false,
+  ): Promise<T[]> {
     return new Promise((res, rej) =>
-      this.query(async (conn) => {
+      this.query(async (conn: PoolConnection) => {
         const fields = [],
           exec = []
 
@@ -124,13 +127,18 @@ export class DbService {
         }
 
         const stmt =
+          // construct query with column search
           `select * from \`${table}\` where ${fields
-            .map((field) => `${field} = ?`)
-            .join(' and ')}` + (limit > 0 ? ` limit ${limit}` : '')
+            .map((field) => (searchMode ? `${field} like ?` : `${field} = ?`))
+            .join(searchMode ? ' or ' : ' and ')}` +
+          // empty query
+          (fields.length == 0 ? '1=1' : '') +
+          // query limitation
+          (limit > 0 ? ` limit ${limit}` : '')
 
-        conn.query(stmt, exec, (err, result) => {
+        conn.query(stmt, exec, (err: MysqlError, result: T[]) => {
           if (err) return rej(err)
-          return res(result as T[])
+          return res(result)
         })
       }),
     )
