@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import Contact from './../../types/Contact'
 import Form from './Form'
-import { assertJson2xx } from './../../helpers'
+import { apiurl, assertJson2xx } from './../../helpers'
 
 let MOUNTED = false
 
@@ -23,7 +23,7 @@ export default (props: RouteComponentProps) => {
     setContact({ ...contact, ...data })
     setUpdateLoading(true)
 
-    const res = await fetch(`/api/contacts`, {
+    const res = await fetch(apiurl(`/contacts`), {
       method: 'PUT',
       headers: {
         'content-type': 'application/json',

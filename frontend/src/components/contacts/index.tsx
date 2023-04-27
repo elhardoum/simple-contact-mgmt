@@ -7,6 +7,7 @@ import {
   AdjustmentsHorizontalIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline'
+import { apiurl, assertJson2xx } from './../../helpers'
 
 let MOUNTED = false
 
@@ -22,14 +23,8 @@ export default (props: RouteComponentProps) => {
   }, [])
 
   useEffect(() => {
-    fetch(`/api/contacts?${new URLSearchParams({ search })}`)
-      .then((res) => {
-        if (!String(res.status).startsWith('2')) {
-          throw new Error('non 2xx response')
-        }
-
-        return res.json()
-      })
+    fetch(apiurl(`/contacts?${new URLSearchParams({ search })}`))
+      .then(assertJson2xx)
       .then((contacts: Contact[]) => MOUNTED && setContacts(contacts))
       .finally(() => MOUNTED && setLoading(false))
   }, [search])
@@ -42,10 +37,10 @@ export default (props: RouteComponentProps) => {
 
     if (!confirm('Are you sure?')) return
 
-    const res = await fetch(`/api/contacts/${contact.id}`, {
+    const res = await fetch(apiurl(`/contacts/${contact.id}`), {
       method: 'DELETE',
     })
-      .then((r) => r.json())
+      .then(assertJson2xx)
       .catch((err: Error) => console.log(err))
 
     if (res?.success) {
@@ -57,7 +52,7 @@ export default (props: RouteComponentProps) => {
 
   return (
     <>
-      <div className="mb-4 flex items-center">
+      <div className="mb-3 flex items-center">
         <h2>Contacts</h2>
         <Link
           className="bg-blue-500 flex font-medium inline-block ml-4 px-3 py-1 rounded text-sm text-white hover:opacity-75 focus:opacity-75"
@@ -67,7 +62,7 @@ export default (props: RouteComponentProps) => {
           <span className="ml-1 text-xs tracking-wide uppercase">New</span>
         </Link>
         <span className="flex-1"></span>
-        <form>
+        <div>
           <input
             className="w-full rounded border-gray-200 p-2 text-xs shadow-sm"
             type="text"
@@ -75,7 +70,7 @@ export default (props: RouteComponentProps) => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </form>
+        </div>
       </div>
 
       {loading ? (

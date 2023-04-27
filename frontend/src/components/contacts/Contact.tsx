@@ -3,6 +3,7 @@ import { Link, RouteComponentProps } from 'react-router-dom'
 import Loading from '../misc/Loading'
 import Contact from 'src/types/Contact'
 import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline'
+import { apiurl, assertJson2xx } from './../../helpers'
 
 let MOUNTED = false
 
@@ -14,14 +15,8 @@ export default (props: RouteComponentProps<{ id?: string }>) => {
     document.title = 'Contact Info'
     MOUNTED = true
 
-    fetch(`/api/contacts/${props.match.params.id}`)
-      .then((res) => {
-        if (!String(res.status).startsWith('2')) {
-          throw new Error('non 2xx response')
-        }
-
-        return res.json()
-      })
+    fetch(apiurl(`/contacts/${props.match.params.id}`))
+      .then(assertJson2xx)
       .then((contact: Contact) => MOUNTED && setContact(contact))
       .finally(() => MOUNTED && setLoading(false))
 

@@ -3,7 +3,7 @@ import { RouteComponentProps } from 'react-router-dom'
 import Loading from '../misc/Loading'
 import Contact from './../../types/Contact'
 import Form from './Form'
-import { assertJson2xx } from './../../helpers'
+import { assertJson2xx, apiurl } from './../../helpers'
 
 let MOUNTED = false
 
@@ -16,7 +16,7 @@ export default (props: RouteComponentProps<{ id?: string }>) => {
     document.title = 'Edit Contact'
     MOUNTED = true
 
-    fetch(`/api/contacts/${props.match.params.id}`)
+    fetch(apiurl(`/contacts/${props.match.params.id}`))
       .then(assertJson2xx)
       .then((contact: Contact) => MOUNTED && setContact(contact))
       .finally(() => MOUNTED && setLoading(false))
@@ -34,7 +34,7 @@ export default (props: RouteComponentProps<{ id?: string }>) => {
     setContact({ ...contact, ...data })
     setUpdateLoading(true)
 
-    const res = await fetch(`/api/contacts/${contact.id}`, {
+    const res = await fetch(apiurl(`/contacts/${contact.id}`), {
       method: 'PATCH',
       headers: {
         'content-type': 'application/json',

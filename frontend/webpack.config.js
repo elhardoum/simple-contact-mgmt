@@ -58,6 +58,9 @@ module.exports = (env, options) => ({
     new HtmlWebPackPlugin({
       template: './src/index.html',
       filename: './index.html',
+    }),
+    new webpack.DefinePlugin({
+      'process.env.API_BASE_URL': JSON.stringify(process.env.API_BASE_URL),
     })
   ]
 })
