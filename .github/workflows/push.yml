@@ -13,10 +13,8 @@ jobs:
     - name: test
       run: |
         cp .env.sample .env
-        docker compose up -d
-        cd backend
-        npm install
-        npm test
+        docker compose up -d mariadb
+        docker compose run --rm --entrypoint='npm test' backend
       shell: bash
 
   deploy:
@@ -43,6 +41,9 @@ jobs:
           # fetch updates
           git pull origin main
 
+          # fallback to docker-compose if compose command isn't available (e.g. on alpine linux)
+          docker compose >/dev/null && dcompose='docker compose' || dcompose='docker-compose'
+
           # build and reboot containers
-          docker compose build --no-cache
-          docker compose up -d --force-recreate --renew-anon-volumes
+          $dcompose build # --no-cache
+          $dcompose up -d --force-recreate --renew-anon-volumes

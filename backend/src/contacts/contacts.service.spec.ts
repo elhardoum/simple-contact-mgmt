@@ -42,6 +42,7 @@ describe('ContactsService', () => {
   })
 
   it('should list contacts', async () => {
+    service.setTestMode(true)
     const contacts = await service.list()
     expect(contacts).toBeTruthy()
     // 2+ persisted from db test

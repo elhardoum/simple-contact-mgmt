@@ -13,8 +13,6 @@ jobs:
     - name: test
       run: |
         cp .env.sample .env
-        docker compose up -d
-        cd backend
-        npm install
-        npm test
+        docker compose up -d mariadb
+        docker compose run --rm --entrypoint='npm test' backend
       shell: bash
