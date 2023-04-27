@@ -1,4 +1,6 @@
-export const apiurl = (path: string) : string => {
+export const apiurl = (path: string): string => {
+  // some webpack magic which ts wouldn't recognize
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   const base = process.env.API_BASE_URL || '/api'
   return `${base}/${path}`.replace(/\/{2,}/g, '/')
