@@ -10,9 +10,11 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v2
-    - run: |
-      cp .env{.sample,}
-      docker compose up -d
-      cd backend
-      npm install
-      npm test
+    - name: test
+      run: |
+        cp .env.sample .env
+        docker compose up -d
+        cd backend
+        npm install
+        npm test
+      shell: bash
