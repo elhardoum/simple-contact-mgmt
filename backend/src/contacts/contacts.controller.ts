@@ -70,6 +70,9 @@ export class ContactsController {
     @Param('id') id: number,
     @Body() body: Partial<Contact>,
   ): Promise<CrudResponse> {
+    if (!(+id > 0))
+      throw new BadRequestException('Missing or invalid contact id.')
+
     const { name, email, phone }: Partial<Contact> = body
 
     if (!name || 0 == name.trim().length)
@@ -150,5 +153,19 @@ export class ContactsController {
     }
 
     return contacts
+  }
+
+  @Get(':id')
+  async listOne(@Param('id') id: number): Promise<Contact> {
+    if (!(+id > 0))
+      throw new BadRequestException('Missing or invalid contact id.')
+
+    const contact = await this.dbService.findOne<Contact>('contacts', {
+      id,
+    })
+
+    if (!contact?.id) throw new NotFoundException('Contact not found.')
+
+    return contact
   }
 }

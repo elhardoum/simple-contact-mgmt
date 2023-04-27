@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ContactsController } from './contacts.controller'
 import { ContactsService } from './contacts.service'
 import { DbService } from './../db/db.service'
+import { Contact } from 'src/types/Contact'
 
 const dbServiceMock = {
   insert: jest.fn(),
@@ -106,5 +107,27 @@ describe('ContactsController', () => {
     await controller.list('search')
     expect(contactsServiceMock.search).toHaveBeenCalledWith('search')
     expect(contactsServiceMock.list).not.toHaveBeenCalled()
+  })
+
+  it('should respond to listOne action', async () => {
+    let error: string
+    await controller.listOne(-42).catch((err) => (error = err))
+    expect(JSON.stringify(error)).toContain('BadRequestException')
+
+    // jest.spyOn(dbServiceMock, 'findOne').mockImplementation()
+    dbServiceMock.findOne = jest.fn(() =>
+      Promise.resolve({
+        id: 43,
+        name: 'Mock User 43',
+        email: 'mock@user.ltd',
+      } as Contact),
+    )
+
+    const result = await controller.listOne(43)
+    expect(dbServiceMock.findOne).toHaveBeenCalledWith('contacts', {
+      id: 43,
+    })
+    expect(result.id).toStrictEqual(43)
+    expect(result.name).toStrictEqual('Mock User 43')
   })
 })

@@ -2,7 +2,7 @@
   "name": "simple-contact-mgmt-backend",
   "version": "0.0.1",
   "description": "",
-  "author": "",
+  "author": "ismail <i@elhardoum.com>",
   "license": "GPLv3",
   "scripts": {
     "build": "nest build",
